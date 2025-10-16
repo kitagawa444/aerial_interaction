@@ -1,16 +1,15 @@
-#ドローンが手を追従する
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import rospy
-from geomtry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped
 
-class DroneFollwer:
+class DroneFollower:
     def __init__(self):
         rospy.init_node('drone_follower')
 
         #手の位置を購読
-        rospy.Subcriber("/wrist/mocap/pose", PoseStamped, self.hand_callback)
+        rospy.Subscriber("/wrist/mocap/pose", PoseStamped, self.hand_callback)
 
         #ドローンの目標ポーズを発行
         self.pub = rospy.Publisher('/drone/setpoint_position/local', PoseStamped, queue_size=10)
@@ -37,6 +36,9 @@ class DroneFollwer:
 
         #姿勢は固定のまま
         self.pub.publish(self.target_pose)
+
+    def chase_hand(self):
+        
 
     def run(self):
         rospy.spin()
