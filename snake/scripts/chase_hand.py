@@ -2,43 +2,52 @@
 # -*- coding: utf-8 -*-
 
 import rospy
+import math
 from geometry_msgs.msg import PoseStamped
+from std_msgs.msg import String
+from std_msgs.msg import Empty
+from aerial_robot_msgs.msg import FlightNav
 
 class DroneFollower:
     def __init__(self):
         rospy.init_node('drone_follower')
 
+        #手の位置を格納する変数
+        self.hand_position = PoseStamped()
+        
+        #目標位置を示すself変数self.nav_msgを定義
+        self.nav_msg = FlightNav()
+        self.nav_msg.control_frame = FlightNav.WORLD_FRAME
+        self.nav_msg.target = FlightNav.COG
+        self.nav_msg.pos_xy_nav_mode = FlightNav.POS_MODE
+        self.nav_msg.pos_z_nav_mode = FlightNav.POS_MODE
+        
+
+        #目標位置を発行するノードnav_pub
+        self.nav_pub = rospy.Publisher('/quadrotor/uav/nav', FlightNav, queue_size=10)
+
         #手の位置を購読
-        rospy.Subscriber("/wrist/mocap/pose", PoseStamped, self.hand_callback)
+        self.hand_sub = rospy.Subscriber("/wrist/mocap/pose", PoseStamped, self.hand_callback)
 
-        #ドローンの目標ポーズを発行
-        self.pub = rospy.Publisher('/drone/setpoint_position/local', PoseStamped, queue_size=10)
-
-        #ドローンの目標姿勢（初期化）
-        self.target_pose = PoseStamped()
-        self.target_pose.header.frame_id = "world"
-
-        #姿勢は固定（水平姿勢）
-        self.target_pose.pose.orientation.x = 0.0
-        self.target_pose.pose.orientation.y = 0.0
-        self.target_pose.pose.orientation.z = 0.0
-        self.target_pose.pose.orientation.w = 1.0
-
-        rospy.loginfo("Drone Position Follower Node started.")
+        #スタートの合図
+        rospy.loginfo("Drone FlightNav Follower Node started.")
 
     def hand_callback(self, msg):
-        #手の位置を取得して、ドローン目標に反映
-        self.target_pose.header.stamp = rospy.Time.now()
+        #手の位置を取得
+        self.hand_position = msg
+        self.hand_position.header.stamp = rospy.Time.now()
+        hand_x = self.hand_position.pose.position.x
+        hand_y = self.hand_position.pose.position.y
+        hand_z = self.hand_position.pose.position.z
 
-        self.target_pose.pose.position.x =  msg.pose.position.x
-        self.target_pose.pose.position.y = msg.pose.position.y
-        self.target_pose.pose.position.z = msg.pose.position.z + 0.5
+        #ドローンの目標位置に反映
+        self.nav_msg.target_pos_x = hand_x
+        self.nav_msg.target_pos_y = hand_y
+        self.nav_msg.target_pos_z = hand_z + 0.5
 
-        #姿勢は固定のまま
-        self.pub.publish(self.target_pose)
-
-    def chase_hand(self):
-        
+        #ドローンの目標位置を発行
+        self.nav_pub.publish(self.nav_msg)
+        rospy.loginfo("Publish the aim")
 
     def run(self):
         rospy.spin()

@@ -53,6 +53,9 @@
     <remap from="eye_pose" to ="/eye/mocap/pose"/>
   </node>
 
+  <!-- convert gazebo world to mocap data-->
+  <node name="gazebo_state_converter" pkg="aerial_handover" type="gazebo_state_converter.py" respawn="false" output="screen" if="$(arg sim)"/>
+
   <!-- mocap -->
   <node pkg="mocap_optitrack" type="mocap_node" name="mocap_node" respawn="false" if="$(arg sim)">
     <rosparam subst_value="true">
