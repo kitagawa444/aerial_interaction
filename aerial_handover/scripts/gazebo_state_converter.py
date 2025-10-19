@@ -41,6 +41,7 @@ class PoseToGazeboPublisher:
 
         # Publisher
         self.pub = rospy.Publisher('/gazebo/set_model_state', ModelState, queue_size=10)
+        
 
         # Subscriber
         rospy.Subscriber('hand_pose', PoseStamped, self.hand_pose_cb)
