@@ -8,9 +8,21 @@ from std_msgs.msg import String
 from std_msgs.msg import Empty
 from aerial_robot_msgs.msg import FlightNav
 
+def _normalize_ns(ns):
+    """ '/quadrotor' 'quadrotor/'などを'quadrotor'に正規化"""
+    return ns.strip("/") if ns else ""
+
 class DroneFollower:
     def __init__(self):
         rospy.init_node('drone_follower')
+
+        #ロボット名（名前空間）をパラメータ化
+        robot_ns_raw = rospy.get_param("~robot_ns", "quadrotor")
+        robot_ns = _normalize_ns(robot_ns_raw)
+
+        #出力先：/<robot_ns>/uav/nav (robot_nsが空なら /uav/nav)
+        nav_topic = "/{}/uav/nav".format(robot_ns) if robot_ns else "/uav/nav"
+        
 
         #手の位置を格納する変数
         self.hand_position = PoseStamped()
@@ -24,13 +36,14 @@ class DroneFollower:
         
 
         #目標位置を発行するノードnav_pub
-        self.nav_pub = rospy.Publisher('/quadrotor/uav/nav', FlightNav, queue_size=10)
+        self.nav_pub = rospy.Publisher(nav_topic, FlightNav, queue_size=10)
 
         #手の位置を購読
         self.hand_sub = rospy.Subscriber("/wrist/mocap/pose", PoseStamped, self.hand_callback)
 
         #スタートの合図
         rospy.loginfo("Drone FlightNav Follower Node started.")
+        rospy.loginfo("robot_ns: %s", robot_ns if robot_ns else "(none)")
 
     def hand_callback(self, msg):
         #手の位置を取得
