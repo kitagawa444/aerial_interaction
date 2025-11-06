@@ -56,7 +56,7 @@ class DroneFollower:
         #ドローンの目標位置に反映
         self.nav_msg.target_pos_x = hand_x
         self.nav_msg.target_pos_y = hand_y
-        self.nav_msg.target_pos_z = hand_z + 0.5
+        self.nav_msg.target_pos_z = hand_z + 0.3
 
         #ドローンの目標位置を発行
         self.nav_pub.publish(self.nav_msg)
