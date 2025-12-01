@@ -5,17 +5,30 @@ import rospy
 import math
 import numpy as np
 from geometry_msgs.msg import PoseStamped
-from std_msgs.msg import String
-from std_msgs.msg import Empty
 from tf.transformations import quaternion_from_euler, quaternion_matrix, quaternion_multiply
 
 class HandFollower:
+    """
+    手の位置生成をキーボードから入力し、
+    ・手の平法線方向（手ローカル+Z)上に「目(eye)」を配置する。
+    ・目が手の平を正面から見るように姿勢（クオータニオン）を合わせる。
+    という動作を行うノード。
+
+    目のローカル座標系の軸が手のローカル軸とどう対応するかは以下：
+    X_e = -Z_h
+    Y_e = -Y_h
+    Z_e = -X_h
+    この回転は　roll=0, pitch=+90°, yaw=180°により実現できる。
+    """
+    
     def __init__(self):
         rospy.init_node('hand_follower')
 
-        self.hand_topic = rospy.get_param("~hand_topic", "/hand/pose")
-        self.eye_topic = rospy.get_param("~eye_topic", "/eye/pose")
+        #Publishするトピック名
+        self.hand_topic = rospy.get_param("~hand_topic", "/wrist/mocap/pose")
+        self.eye_topic = rospy.get_param("~eye_topic", "/eye/mocap/pose")
 
+        #手の平法線方向へどれくらい離れて目を置くか [m]
         self.eye_offset = rospy.get_param("~eye_offset", 0.4)
 
         self.hand_pub = rospy.Publisher(self.hand_topic, PoseStamped, queue_size = 1)
@@ -28,20 +41,32 @@ class HandFollower:
 
     def compute_eye_pose(self, hand_pose):
         """
-        手のPoseStampedから、手の平法線上にある目のPoseStampedを計算する。
-        - 手の平法線：手座標系の+Z軸を法線と仮定
-        - 目の位置： hand_pos + offset * normal_world
-        - 目の姿勢： 手の姿勢を180度回転させて、「手の平を見る」向きにする
-        """
+        入力された手のPoseStampedから、目のPoseStampedを計算する。
+        
+        【位置の決め方】
+        　　手首位置 hand_posから、
+        　　手のローカル+z(手の平法線）方向にeye_offsetだけ離れた点を目の位置とする。
+
+        【姿勢の決め方】
+        　　手ローカル軸（X_h, Y_h, Z_h）に対し、
+        　　目のローカル軸を以下のように対応させる回転を適用する：
+        
+        　　　X_e = -Z_h
+        　　　Y_e = -Y_h
+        　　　Z_e = -X_h　
+
+          この目的の回転は roll=0, pitch=+90°, yaw=180で実現できる。
+        """°
 
         #手の位置ベクトル
         hx = hand_pose.pose.position.x
         hy = hand_pose.pose.position.y
         hz = hand_pose.pose.position.z
+        hand_pos = np.array([hx, hy, hz])
 
         #手のクオータニオン
         qh = hand_pose.pose.orientation
-        q_hand = np.array([qh.x, qh.y, qh.z qh.w])
+        q_hand = np.array([qh.x, qh.y, qh.z, qh.w])
 
         #手座標系の+Z軸(0,0,1)をワールド座標系に変換
         #quaternion_matrixで4x4の回転行列にして、その3x3部分を取り出す。
@@ -53,14 +78,13 @@ class HandFollower:
         #目の位置 = 手の位置 + offset * 法線
         eye_pos = hand_pos + self.eye_offset * normal_world
 
-        #目の向き：
-        #ここでは「手の平方向を向く」ように、手の姿勢を180度回転させておく。
-        #回転軸は(0,1,0)　（手座標系のy軸）としているが、
-        #　モデルによっては(1,0,0)や(0,0,1)のほうが自然な場合もあるので調整する。
+        #目の姿勢：手の姿勢にオフセット回転を適用
+        #roll=0, pitch=+pi/2, yaw=pi
 
-        q_rot180 = quaternion_from_euler(0.0, math.pi, 0.0)
-        #y軸周り180deg
-
+        q_offset = quaternion_from_euler(0.0, math.pi/2.0, math.pi)
+        q_eye = quaternion_multiply(q_hand, q_offset)
+        
+        #PoseStampedとして格納
         eye_pose = PoseStamped()
         eye_pose.header.frame_id = hand_pose.header.frame_id
         eye_pose.header.stamp = rospy.Time.now()
@@ -82,6 +106,7 @@ class HandFollower:
         入力フォーマット：x y z roll_deg pitch_deg yaw_deg
         (終了したいときは、'q'を入力）
         """
+        rate = rospy.Rate(10)
 
         print("")
         print("=== Eye-Chasing-Hand ===")
@@ -122,8 +147,8 @@ class HandFollower:
             #手のクオータニオン
             q_hand = quaternion_from_euler(roll, pitch, yaw)
 
-            #手のPoseStamedを作成
-            hand_pose = PoseStamped
+            #手のPoseStampedを作成
+            hand_pose = PoseStamped()
             hand_pose.header.stamp = rospy.Time.now()
             #frame_idは必要に応じて変更（"world"や"map"など）
             hand_pose.header.frame_id = "world"
@@ -163,6 +188,6 @@ class HandFollower:
             #すぐ次の入力を受け付けたいので、Rate.sleepだけ軽く回しておく
             rate.sleep()
 
-if __name__ == "main__":
+if __name__ == "__main__":
     node = HandFollower()
     node.run()

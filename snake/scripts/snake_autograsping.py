@@ -8,11 +8,11 @@ class AutoGrasping:
         rospy.init_node("autoGrasping")
 
         #Prepared values
-        self.limitLoadInf_0 = 10
-        self.limitLoadSup_0 = 30
-        self.limitLoadInf_1_open = 50
+        self.limitLoadInf_0 = 20
+        self.limitLoadSup_0 = 60
+        self.limitLoadInf_1_open = 30
         self.limitLoadSup_1_open = 70
-        self.limitLoadInf_1_close = 70
+        self.limitLoadInf_1_close = 30
         self.limitLoadSup_1_close = 90
         self.servoMoveRange = 100
 
@@ -28,8 +28,8 @@ class AutoGrasping:
         #Flags
         self.targetTorqueReachedFlag_0 = False
         self.targetTorqueReachedFlag_1 = False
-        self.OpenFlag_0 = rospy.get_param('OpenFlag_0')
-        self.OpenFlag_1 = rospy.get_param('OpenFlag_1')
+        self.OpenFlag_0 = rospy.get_param('OpenFlag_0', True)
+        self.OpenFlag_1 = rospy.get_param('OpenFlag_1', True)
 
         #ROS
         self.last_callback_time = rospy.get_time()
@@ -46,22 +46,29 @@ class AutoGrasping:
         if targetServoIndex == 0:
             if self.OpenFlag_0:
                 if -self.limitLoadInf_0 < self.currentServoLoad_0:
-                    self.targetServoPosition_0 = int(self.currentServoPosition_0 + self.servoMoveRange)
+                    self.targetServoPosition_0 = int(self.currentServoPosition_0 - self.servoMoveRange)
+                    print(f"Opening")
                 elif -self.limitLoadSup_0 < self.currentServoLoad_0 <= -self.limitLoadInf_0:
                     self.OpenFlag_0 = not self.OpenFlag_0
                     rospy.set_param('OpenFlag_0', self.OpenFlag_0)
                     self.targetTorqueReachedFlag_0 = True
+                    print(f"Stopped")
                 else:
-                    self.targetServoPosition_0 = int(self.currentServoPosition_0 - self.servoMoveRange)
+                    self.targetServoPosition_0 = int(self.currentServoPosition_0 + self.servoMoveRange)
+                    print(f"Overload!!!!!!!!")
+                    print(f"Moving Back")
             else:
                 if self.currentServoLoad_0 < -self.limitLoadInf_0:
-                    self.targetServoPosition_0 = int(self.currentServoPosition_0 - self.servoMoveRange)
+                    self.targetServoPosition_0 = int(self.currentServoPosition_0 + self.servoMoveRange)
+                    print(f"Closing")
                 elif -self.limitLoadInf_0 < self.currentServoLoad_0 < 0:
                     self.OpenFlag_0 = not self.OpenFlag_0
                     rospy.set_param('OpenFlag_0', self.OpenFlag_0)
                     self.targetTorqueReachedFlag_0 = True
+                    print(f"Stopped")
                 else:
-                    self.targetServoPosition_0 = int(self.currentServoPosition_0 + self.servoMoveRange)
+                    self.targetServoPosition_0 = int(self.currentServoPosition_0 - self.servoMoveRange)
+                    print(f"Moving Back")
             self.sendGraspingCommand(targetServoIndex)
 
         elif targetServoIndex == 1:
