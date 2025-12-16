@@ -23,10 +23,10 @@
   <!-- =====================================
        IKベースナビゲーション + マーカー
        ===================================== -->
-  <include file="$(find ik_base_nav)/launch/dragon_navigation.launch">
+  <!-- <include file="$(find ik_base_nav)/launch/dragon_navigation.launch"> -->
     <!-- 追加：use_markerを下流に流す -->
-    <arg name="use_marker" value="$(eval arg('hand_source') == 'marker')" />
-    </include>
+    <!-- <arg name="use_marker" value="$(eval arg('hand_source') == 'marker')" /> -->
+    <!-- </include> -->
 
   <!-- ======================
        マーカー → handターゲット
