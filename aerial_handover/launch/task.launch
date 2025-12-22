@@ -42,9 +42,15 @@
   <arg name="eye_spawn_z" default="1.0"/>
   <arg name="eye_spawn_yaw" default="0.0"/>
   <node name="eye_camera_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-        args="-file $(find aerial_handover)/urdf/eye_camera.urdf.xacro -urdf -model eye -x $(arg eye_spawn_x) -y $(arg eye_spawn_y) -z $(arg eye_spawn_z) -Y $(arg eye_spawn_yaw)" if="$(arg sim)"/>
+        args="-file $(find aerial_handover)/urdf/eye_camera_stereo.urdf.xacro -urdf -model eye -x $(arg eye_spawn_x) -y $(arg eye_spawn_y) -z $(arg eye_spawn_z) -Y $(arg eye_spawn_yaw)" if="$(arg sim)"/>
 
-  <node pkg="image_view" type="image_view" name="image_view" args="image:=/eye/image_raw"/>
+  <!-- <node pkg="image_view" type="image_view" name="image_view" args="image:=/eye/image_raw"/> -->
+  <node pkg="image_view" type="image_view" name="image_view_left"
+  args="image:=/eye_left/image_raw" />
+
+  <node pkg="image_view" type="image_view" name="image_view_right"
+  args="image:=/eye_right/image_raw" />
+
 
   <!-- spawn hand model -->
   <arg name="hand_spawn_x" default="2.0"/>
