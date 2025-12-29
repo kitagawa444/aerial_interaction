@@ -23,6 +23,7 @@ catkin_install_python(PROGRAMS
   scripts/set_hand_pose_gazebo.py
   scripts/interactive_marker.py
   scripts/pose_transformer.py
+  scripts/dragon_handover_nav.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

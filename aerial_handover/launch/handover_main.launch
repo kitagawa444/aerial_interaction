@@ -20,16 +20,12 @@
     </include>
 
     <node pkg="aerial_handover" type="pose_transformer.py" name="pose_transformer" output="screen">
-        <param name="handover_dis_x" value="0.2" />
-        <param name="handover_dis_z" value="0.2" />
-        <param name="handover_pitch" value="0.2" />
+        <param name="handover_dis_x" value="0.0" />
+        <param name="handover_dis_z" value="0.0" />
+        <param name="handover_pitch" value="0.0" />
         <remap from="/desired_3D_pose" to="/hand_pose" />
     </node>
 
-    <!-- ======================
-       mocap → handターゲット
-       hand_source が mocap のときだけ動かす
-       ====================== -->
-    <!-- <node pkg="aerial_handover" type="mocap_to_hand_target.py" name="mocap_to_hand_target" output="screen" if="$(eval arg('hand_source') == 'mocap')" /> -->
+    <node pkg="aerial_handover" type="dragon_handover_nav.py" name="dragon_handover_nav" output="screen" />
 
 </launch>
