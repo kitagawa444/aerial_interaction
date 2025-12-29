@@ -9,22 +9,17 @@ from gazebo_msgs.msg import ModelState
 
 class HandGazeboFollower:
     def __init__(self):
-        rospy.init_node('hand_gazebo_from_interactive_marker')
+        rospy.init_node('set_hand_pose_gazebo')
 
         # Gazebo 上の hand モデル名（task.launch で -model hand になっている）
         self.model_name = rospy.get_param('~model_name', 'hand')
 
-        # 手の目標位置を受け取るトピック
-        # まずは /desired_3D_pose でも /hand/target_pose でも好きな方でOK
-        self.pose_topic = rospy.get_param('~pose_topic', '/hand/target_pose')
+        self.sub = rospy.Subscriber('hand_pose', PoseStamped, self.pose_callback, queue_size=1)
 
-        rospy.loginfo("Waiting for /gazebo/set_model_state service...")
         rospy.wait_for_service('/gazebo/set_model_state')
+        rospy.loginfo("Waiting for /gazebo/set_model_state service...")
         self.set_model_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
         rospy.loginfo("Connected to /gazebo/set_model_state")
-
-        self.sub = rospy.Subscriber(self.pose_topic, PoseStamped,
-                                    self.pose_callback, queue_size=1)
 
     def pose_callback(self, msg):
         state = ModelState()
