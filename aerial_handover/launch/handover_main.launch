@@ -20,8 +20,8 @@
     </include>
 
     <node pkg="aerial_handover" type="pose_transformer.py" name="pose_transformer" output="screen">
-        <param name="handover_dis_x" value="0.0" />
-        <param name="handover_dis_z" value="0.0" />
+        <param name="handover_dis_x" value="0.2" />
+        <param name="handover_dis_z" value="0.1" />
         <param name="handover_pitch" value="0.0" />
         <remap from="/desired_3D_pose" to="/hand_pose" />
     </node>
