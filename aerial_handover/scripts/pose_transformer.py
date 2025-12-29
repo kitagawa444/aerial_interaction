@@ -34,7 +34,7 @@ class PoseTransformer:
         self.robot_head_pose_in_hand.pose.position.x = self.handover_dis_x
         self.robot_head_pose_in_hand.pose.position.y = 0.0
         self.robot_head_pose_in_hand.pose.position.z = self.handover_dis_z
-        q = quaternion_from_euler(0.0, self.handover_pitch, np.pi)
+        q = quaternion_from_euler(0.0, self.handover_pitch, 0)
         self.robot_head_pose_in_hand.pose.orientation.x = q[0]
         self.robot_head_pose_in_hand.pose.orientation.y = q[1]
         self.robot_head_pose_in_hand.pose.orientation.z = q[2]
