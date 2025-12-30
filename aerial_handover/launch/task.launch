@@ -8,7 +8,7 @@
   <arg name="sim" default="False" />
   <arg name="estimate_mode"  default= "0" />
   <arg name="headless" default="True" />
-  <arg name="worldtype" default="$(find aerial_robot_simulation)/gazebo_model/world/empty.world" />
+  <arg name="worldtype" default="$(find aerial_robot_simulation)/gazebo_model/world/0066.world" />
   <!-- <arg name="launch_gazebo" default="True" /> -->
   <arg name="robot_spawn_x" default="0.0"/>
   <arg name="robot_spawn_y" default="0.0"/>
@@ -16,7 +16,7 @@
   <arg name="robot_spawn_yaw" default="0.0"/>
 
   <!-- 追加：手の位置のソース(marker or mocap) -->
-  <arg name="hand_source" default="marker"/> 
+  <arg name="hand_source" default="mocap"/> 
 
   <!-- 追加：Gazeboからmocap疑似生成を使うかどうか -->
   <arg name="use_gazebo_mocap" default="False"/>  
@@ -40,16 +40,16 @@
   <arg name="eye_spawn_x" default="-2.0"/>
   <arg name="eye_spawn_y" default="0.0"/>
   <arg name="eye_spawn_z" default="1.0"/>
-  <arg name="eye_spawn_yaw" default="0.0"/>
+  <arg name="eye_spawn_yaw" default="0.0"/>~/ros/human_robot_interaction_ws/web$
   <node name="eye_camera_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-        args="-file $(find aerial_handover)/urdf/eye_camera_stereo.urdf.xacro -urdf -model eye -x $(arg eye_spawn_x) -y $(arg eye_spawn_y) -z $(arg eye_spawn_z) -Y $(arg eye_spawn_yaw)" if="$(arg sim)"/>
+        args="-file $(find aerial_handover)/urdf/eye_camera.urdf.xacro -urdf -model eye -x $(arg eye_spawn_x) -y $(arg eye_spawn_y) -z $(arg eye_spawn_z) -Y $(arg eye_spawn_yaw)" if="$(arg sim)"/>
 
-  <!-- <node pkg="image_view" type="image_view" name="image_view" args="image:=/eye/image_raw"/> -->
-  <node pkg="image_view" type="image_view" name="image_view_left"
-  args="image:=/eye_left/image_raw" />
+  <node pkg="image_view" type="image_view" name="image_view" args="image:=/eye/image_raw"/>
+  <!-- <node pkg="image_view" type="image_view" name="image_view_left" -->
+  <!-- args="image:=/eye_left/image_raw" /> -->
 
-  <node pkg="image_view" type="image_view" name="image_view_right"
-  args="image:=/eye_right/image_raw" />
+  <!-- <node pkg="image_view" type="image_view" name="image_view_right" -->
+  <!-- args="image:=/eye_right/image_raw" /> -->
 
 
   <!-- spawn hand model -->

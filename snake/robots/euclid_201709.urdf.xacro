@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<robot
+    xmlns:xacro="http://www.ros.org/wiki/xacro" name="dragon" >
+
+  <xacro:arg name="robot_name" default="dragon" />
+
+  <!-- robot urdf -->
+  <xacro:include filename="$(find dragon)/robots/quad/euclid_201709.urdf.xacro" />
+  <xacro:include filename="$(find snake)/urdf/snake_head.urdf.xacro" />
+
+</robot>
