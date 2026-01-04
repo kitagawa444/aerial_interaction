@@ -61,6 +61,10 @@ sysinfo.txt
 # Crashlytics generated file
 crashlytics-build.properties
 
+# Burst Compiler
+/[Bb]urstDebugInformation_DoNotShip/
+*_BurstDebugInformation_DoNotShip/
+
 # OS generated
 .DS_Store
 .DS_Store?
