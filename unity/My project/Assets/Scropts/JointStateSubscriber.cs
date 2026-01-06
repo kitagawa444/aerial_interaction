@@ -116,7 +116,7 @@ public class JointStatesSubscriber : MonoBehaviour
                 if (rawName.Contains("yaw")) 
                 {
                     // ROS Z-axis (Yaw) -> Unity Y-axis (Up)
-                    axis = Vector3.up; 
+                    axis = -Vector3.up; 
                 }
                 else if (rawName.Contains("pitch")) 
                 {
@@ -127,7 +127,7 @@ public class JointStatesSubscriber : MonoBehaviour
                 else if (rawName.Contains("roll")) 
                 {
                     // ROS X-axis (Roll) -> Unity Z-axis (Forward)
-                    axis = Vector3.forward; 
+                    axis = -Vector3.forward; 
                 }
             }
 

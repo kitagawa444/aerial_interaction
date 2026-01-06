@@ -471,7 +471,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7acef0b79454c9b4dae3f8139bc4ba77, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_RosIPAddress: 192.168.1.6
+  m_RosIPAddress: 192.168.1.5
   m_RosPort: 10000
   m_ConnectOnStart: 1
   m_KeepaliveTime: 1
@@ -7851,8 +7851,7 @@ GameObject:
   - component: {fileID: 1428937121}
   - component: {fileID: 1428937120}
   - component: {fileID: 1428937123}
-  - component: {fileID: 1428937124}
-  - component: {fileID: 1428937125}
+  - component: {fileID: 1428937122}
   m_Layer: 0
   m_Name: dragon
   m_TagString: robot
@@ -7893,6 +7892,23 @@ Transform:
   - {fileID: 755675446}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1428937122
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1428937118}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c786f9da8ca1fdc00a1cd0abfcddc03e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  tfTopic: /tf
+  targetFrame: dragon/root
+  rotationOffset: {x: 0, y: 0, z: 0}
+  positionOffset: {x: 0, y: 0, z: 0}
+  showDebugGizmos: 1
 --- !u!114 &1428937123
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7905,7 +7921,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7fccd1b522eccaf7b6a45512ef0cedc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  defaultAxis: {x: 1, y: 0, z: 0}
+  defaultAxis: {x: 0, y: 1, z: 0}
   autoAxisFromName: 1
   enableNameNormalization: 1
   stripNamespace: 1
@@ -7918,38 +7934,6 @@ MonoBehaviour:
   missingLogSampleCount: 5
   mapRosJointNameToChildLinkName: 1
   useRosInput: 1
---- !u!114 &1428937124
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1428937118}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c786f9da8ca1fdc00a1cd0abfcddc03e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  topic: /dragon/ground_truth
-  rotationOffset: {x: 0, y: 0, z: 0}
-  positionOffset: {x: 0, y: 0, z: 0}
-  showDebugGizmos: 1
---- !u!114 &1428937125
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1428937118}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c786f9da8ca1fdc00a1cd0abfcddc03e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  topic: /dragon/ground_truth
-  rotationOffset: {x: 0, y: 0, z: 0}
-  positionOffset: {x: 0, y: 0, z: 0}
-  showDebugGizmos: 1
 --- !u!1 &1439851229
 GameObject:
   m_ObjectHideFlags: 0

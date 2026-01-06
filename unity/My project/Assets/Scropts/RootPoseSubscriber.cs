@@ -1,16 +1,20 @@
 using UnityEngine;
 using Unity.Robotics.ROSTCPConnector;
-using RosMessageTypes.Nav;
+using RosMessageTypes.Tf2;
+using RosMessageTypes.Geometry;
 
 public class RootPoseSubscriber : MonoBehaviour
 {
-    public string topic = "/dragon/ground_truth";
+    // TFのトピック名 (通常は "/tf")
+    public string tfTopic = "/tf";
+    // 監視対象のフレーム名
+    public string targetFrame = "dragon/root";
+    
     ROSConnection ros;
 
     [Header("Adjustments")]
-    // ★軸の向きが違う場合、ここで補正する (例: (0, -90, 0) や (90, 0, 0))
-    public Vector3 rotationOffset = new Vector3(0, 0, 0); 
-    // 位置がズレている場合の補正
+    // 軸の向き補正 (必要に応じてInspectorで調整してください)
+    public Vector3 rotationOffset = new Vector3(0, 0, 0);
     public Vector3 positionOffset = Vector3.zero;
 
     [Header("Debug")]
@@ -23,60 +27,62 @@ public class RootPoseSubscriber : MonoBehaviour
     void Start()
     {
         ros = ROSConnection.GetOrCreateInstance();
-        ros.Subscribe<OdometryMsg>(topic, OnMsg);
+        // TFMessageを受信するように変更
+        ros.Subscribe<TFMessageMsg>(tfTopic, OnTFMsg);
 
-        // ★物理演算を完全に切る（破壊する）
-        // 可視化だけなら ArticulationBody も Collider も不要です。
-        // これらが残っていると、Transform移動を邪魔したり発散したりします。
-        
+        // 物理演算コンポーネントの削除
         var allAbs = GetComponentsInChildren<ArticulationBody>();
-        foreach (var ab in allAbs)
-        {
-            Destroy(ab); // 物理コンポーネントを削除
-        }
+        foreach (var ab in allAbs) Destroy(ab);
 
         var allColliders = GetComponentsInChildren<Collider>();
-        foreach (var c in allColliders)
-        {
-            Destroy(c); // 衝突判定を削除
-        }
+        foreach (var c in allColliders) Destroy(c);
         
         var allRbs = GetComponentsInChildren<Rigidbody>();
-        foreach (var rb in allRbs)
-        {
-            Destroy(rb); // Rigidbodyがあればそれも削除
-        }
+        foreach (var rb in allRbs) Destroy(rb);
 
-        Debug.Log("[RootPoseSubscriber] Physics components destroyed. Running in visualization-only mode.");
+        Debug.Log($"[RootPoseSubscriber] Listening to TF topic: {tfTopic} for frame: {targetFrame}");
     }
 
     void Update()
     {
         if (!_hasData) return;
 
-        // 補正値を適用して移動・回転
         transform.position = _targetPos + positionOffset;
-        // 回転オフセットを適用（元の回転 * オフセット）
         transform.rotation = _targetRot * Quaternion.Euler(rotationOffset);
     }
 
-    void OnMsg(OdometryMsg msg)
+    void OnTFMsg(TFMessageMsg msg)
     {
-        var p = msg.pose.pose.position;
-        var o = msg.pose.pose.orientation;
+        foreach (var transformStamped in msg.transforms)
+        {
+            // 指定したチャイルドフレームIDを持つ変換を探す
+            if (transformStamped.child_frame_id == targetFrame)
+            {
+                UpdateTargetPose(transformStamped.transform);
+                return;
+            }
+        }
+    }
 
-        if (double.IsNaN(p.x)) return;
+    void UpdateTargetPose(TransformMsg rosTransform)
+    {
+        var t = rosTransform.translation;
+        var r = rosTransform.rotation;
 
-        // ROS (FLU) -> Unity (RUF) 変換
-        Vector3 pos = new Vector3((float)-p.y, (float)p.z, (float)p.x);
-        
-        var C = new Matrix4x4(
-            new Vector4(0, 0, 1, 0),
-            new Vector4(-1, 0, 0, 0),
-            new Vector4(0, 1, 0, 0),
-            new Vector4(0, 0, 0, 1));
-        Quaternion qRos = new Quaternion((float)o.x, (float)o.y, (float)o.z, (float)o.w);
-        Quaternion rot = (C * Matrix4x4.Rotate(qRos) * C.inverse).rotation;
+        // ROS -> Unity 座標変換
+        // 並進の設定 (y, z, x) に合わせて、回転の成分も (y, z, x) の順で取得
+        // Standard ROS to Unity
+        Vector3 pos = new Vector3(-(float)t.y, (float)t.z, (float)t.x);
+        Quaternion rot = new Quaternion(-(float)r.y, (float)r.z, (float)r.x, -(float)r.w);
+
+        // クォータニオンとオイラー角の両方を計算して比較しやすくする
+        Vector3 rosEuler = new Quaternion((float)r.x, (float)r.y, (float)r.z, (float)r.w).eulerAngles;
+        Vector3 unityEuler = rot.eulerAngles;
+
+        // ログを統合して出力
+        Debug.Log($"[RootPose]\n" +
+                  $"ROS Raw   : Pos({t.x:F3}, {t.y:F3}, {t.z:F3}) Q({r.x:F3}, {r.y:F3}, {r.z:F3}, {r.w:F3}) E({rosEuler.x:F1}, {rosEuler.y:F1}, {rosEuler.z:F1})\n" +
+                  $"Unity     : Pos({pos.x:F3}, {pos.y:F3}, {pos.z:F3}) Q({rot.x:F3}, {rot.y:F3}, {rot.z:F3}, {rot.w:F3}) E({unityEuler.x:F1}, {unityEuler.y:F1}, {unityEuler.z:F1})");
 
         _targetPos = pos;
         _targetRot = rot;
@@ -87,7 +93,6 @@ public class RootPoseSubscriber : MonoBehaviour
     {
         if (!showDebugGizmos || !_hasData) return;
         Gizmos.color = new Color(1, 0, 0, 0.5f);
-        // Gizmosも補正後の位置に出す
         Vector3 drawPos = _targetPos + positionOffset;
         Gizmos.DrawSphere(drawPos, 0.3f);
         Gizmos.DrawLine(Vector3.zero, drawPos);
