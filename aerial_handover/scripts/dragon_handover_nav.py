@@ -63,7 +63,7 @@ class DragonSimpleNav:
         self.link_length = rospy.get_param('~link_length', 0.44)
 
         # Tolerance for checking if desired pose is achieved (radians)
-        self.position_tolerance = 0.01
+        self.position_tolerance = 0.05
 
         # Tolerance for navigation (meters)
         self.nav_position_tolerance = 0.1
