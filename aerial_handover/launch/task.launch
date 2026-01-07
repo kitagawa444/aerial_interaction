@@ -3,7 +3,7 @@
 
 
   <!-- bringup robot -->
-  <arg name="robot_name" default="dragon" />
+  <arg name="robot_name" default="snake" />
   <arg name="rm" default="True" />
   <arg name="sim" default="False" />
   <arg name="estimate_mode"  default= "0" />
