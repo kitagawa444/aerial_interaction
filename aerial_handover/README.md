@@ -25,4 +25,12 @@ Use joystick or keyboard to make the robot take off.
 
 When `hand_source:=marker`, the hand pose in Gazebo is given by the interactive marker.
 
-In RViz, set the hand pose using the interactive marker. The hand pose in Gazebo will be updated accordingly. Meanwhile, the robot head's desired pose is published, and the robot starts to approach the hand.
+In RViz, set the hand pose using the interactive marker. The hand pose in Gazebo will be updated accordingly.
+
+To trigger a handover task, in a separate terminal, execute:
+
+```
+rostopic pub /dragon/trigger_handover std_msgs/Empty "{}"
+```
+
+The robot will start to approach the hand using the latest hand pose.

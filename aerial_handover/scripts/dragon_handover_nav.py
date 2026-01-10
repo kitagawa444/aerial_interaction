@@ -7,6 +7,7 @@ import tf.transformations
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Odometry
+from std_msgs.msg import Empty
 from aerial_robot_msgs.msg import FlightNav
 
 
@@ -18,8 +19,11 @@ class DragonSimpleNav:
         # TF listener for coordinate transformations
         self.tf_listener = tf.TransformListener()
 
-        # Subscribe to robot head pose
+        # Subscribe to robot head pose (continuously updated)
         self.robot_head_pose_sub = rospy.Subscriber('/robot_head_pose', PoseStamped, self.robot_head_pose_cb)
+
+        # Subscribe to trigger topic to start transformation and navigation
+        self.trigger_sub = rospy.Subscriber('/dragon/trigger_handover', Empty, self.trigger_handover_cb)
 
         # Subscribe to CoG odometry for navigation feedback
         self.cog_odom_sub = rospy.Subscriber('/dragon/uav/cog/odom', Odometry, self.cog_odom_cb)
@@ -77,21 +81,31 @@ class DragonSimpleNav:
         # Flag to track if we're currently navigating
         self.is_navigating = False
 
-        rospy.loginfo("DragonSimpleNav initialized. Waiting for robot_head_pose messages...")
+        rospy.loginfo("DragonSimpleNav initialized. Waiting for trigger messages...")
 
     def robot_head_pose_cb(self, msg):
-        """Callback for robot head pose"""
-        rospy.loginfo("Received new robot_head_pose message. Starting joint transformation...")
-
-        # Store the target robot head pose
+        """Callback for robot head pose - only stores the latest pose"""
+        # Store the target robot head pose (continuously updated)
         self.target_robot_head_pose = msg
+
+    def trigger_handover_cb(self, msg):
+        """Callback for trigger topic - starts the transformation and navigation task"""
+        if self.target_robot_head_pose is None:
+            rospy.logwarn("Cannot start handover: no robot_head_pose received yet")
+            return
+
+        if self.is_transforming_joints or self.is_navigating:
+            rospy.logwarn("Handover task already in progress, ignoring trigger")
+            return
+
+        rospy.loginfo("Trigger received! Starting joint transformation with latest robot_head_pose...")
 
         # Extract pitch angle from target orientation
         target_quat = [
-            msg.pose.orientation.x,
-            msg.pose.orientation.y,
-            msg.pose.orientation.z,
-            msg.pose.orientation.w
+            self.target_robot_head_pose.pose.orientation.x,
+            self.target_robot_head_pose.pose.orientation.y,
+            self.target_robot_head_pose.pose.orientation.z,
+            self.target_robot_head_pose.pose.orientation.w
         ]
         target_roll, target_pitch, target_yaw = tf.transformations.euler_from_quaternion(target_quat)
 
