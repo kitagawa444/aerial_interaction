@@ -8,7 +8,9 @@
     <arg name="headless" default="False" />
     <!-- 手の位置のソース：marker or mocap -->
     <arg name="hand_source" default="marker" />
-
+    <!-- safe distance from human center to the robot's root link (meters) -->
+    <arg name="safe_distance" default="0.8" />
+    <arg name="num_arc_waypoints" default="10" />
     <!-- =====================================
        DRAGON + Gazebo + 目・手モデル (task)
        ===================================== -->
@@ -26,6 +28,9 @@
         <remap from="/desired_3D_pose" to="/hand_pose" />
     </node>
 
-    <node pkg="aerial_handover" type="dragon_handover_nav.py" name="dragon_handover_nav" output="screen" />
+    <node pkg="aerial_handover" type="dragon_handover_nav.py" name="dragon_handover_nav" output="screen">
+        <param name="safe_distance" value="$(arg safe_distance)" />
+        <param name="num_arc_waypoints" value="$(arg num_arc_waypoints)" />
+    </node>
 
 </launch>
