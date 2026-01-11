@@ -34,3 +34,4 @@
     </node>
 
 </launch>
+<!-- rosrun gazebo_ros_link_attacher link_attacher_node -->
