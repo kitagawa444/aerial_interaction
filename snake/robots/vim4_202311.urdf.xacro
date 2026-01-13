@@ -5,7 +5,7 @@
   <xacro:arg name="robot_name" default="dragon" />
 
   <!-- robot urdf -->
-  <xacro:include filename="$(find dragon)/robots/quad/euclid_201709.urdf.xacro" />
+  <xacro:include filename="$(find dragon)/robots/quad/vim4_202311.urdf.xacro" />
   <xacro:include filename="$(find snake)/urdf/snake_head.urdf.xacro" />
 
   <link name="dummy_mouth">
