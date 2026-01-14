@@ -33,8 +33,8 @@ class AutoGrasping:
 
         #ROS
         self.last_callback_time = rospy.get_time()
-        self.sub = rospy.Subscriber('/servo/states', ServoStates, self.callback, queue_size=10)
-        self.pub = rospy.Publisher('/servo/target_states', ServoControlCmd, queue_size=10)
+        self.sub = rospy.Subscriber('servo/states', ServoStates, self.callback, queue_size=10)
+        self.pub = rospy.Publisher('servo/target_states', ServoControlCmd, queue_size=10)
         self.rate = rospy.Rate(40)
 
     def check_subscription(self):
