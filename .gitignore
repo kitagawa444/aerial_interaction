@@ -49,3 +49,29 @@ qtcreator-*
 
 # Catkin custom files
 CATKIN_IGNORE
+
+# ----------------------------
+# Unity / IDE / build outputs
+# ----------------------------
+# Unity local caches and build outputs (inside the Unity project folder)
+unity/My project/Library/
+unity/My project/Temp/
+unity/My project/Obj/
+# Unity build outputs / binaries
+unity/My project/Build/
+unity/My project/Logs/
+unity/My project/UnityPlayer.so
+unity/My project/appimage.apk*
+unity/My project/appimage.apk_Data/
+
+# Visual Studio / Rider / VSCode
+unity/My project/*.csproj
+unity/My project/*.sln
+unity/My project/*.user
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
