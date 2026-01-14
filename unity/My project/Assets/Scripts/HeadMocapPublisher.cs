@@ -1,109 +1,92 @@
-// using UnityEngine;
-// using Unity.Robotics.ROSTCPConnector;
-// using RosMessageTypes.Geometry;
-// using RosMessageTypes.Std;
+using UnityEngine;
+using Unity.Robotics.ROSTCPConnector;
+using RosMessageTypes.Geometry;
+using RosMessageTypes.Std;
+using RosMessageTypes.BuiltinInterfaces; // 追加: TimeMsg はここ
+using UnityEngine.XR;
 
-// public class HeadMocapPublisher : MonoBehaviour
-// {
-//     [Header("ROS Settings")]
-//     public string topicName = "head/mocap";
-//     public string frameId = "world";
-//     public float publishRateHz = 30.0f;
+public class HeadMocapPublisher : MonoBehaviour
+{
+    [Header("ROS Settings")]
+    public string topicName = "/eye/mocap/pose";
+    public string frameId = "world";
+    public float publishRateHz = 30.0f;
 
-//     [Header("Target")]
-//     public Transform targetTransform; // Main Cameraをここにアタッチ
+    [Header("Controller Settings")]
+    public XRNode controllerNode = XRNode.RightHand; // RightHand または LeftHand
+    public Transform controllerTransform; // XRIの Right/Left Controller Transform をアタッチ
 
-//     ROSConnection ros;
-//     float _publishInterval;
-//     float _lastPublishTime;
+    ROSConnection ros;
+    float _publishInterval;
+    float _lastPublishTime;
 
-//     void Start()
-//     {
-//         // ターゲットが設定されていない場合、MainCameraを自動取得
-//         if (targetTransform == null)
-//         {
-//             if (Camera.main != null)
-//             {
-//                 targetTransform = Camera.main.transform;
-//             }
-//             else
-//             {
-//                 Debug.LogWarning("[HeadMocapPublisher] Target not set and MainCamera not found.");
-//                 enabled = false;
-//                 return;
-//             }
-//         }
+    void Start()
+    {
+        // コントローラーのTransformが設定されていない場合の警告
+        if (controllerTransform == null)
+        {
+            Debug.LogWarning("[HeadMocapPublisher] Controller Transform not set. Please assign Right/Left Controller Transform under XR Origin.");
+            enabled = false;
+            return;
+        }
 
-//         ros = ROSConnection.GetOrCreateInstance();
-//         ros.RegisterPublisher<PoseStampedMsg>(topicName);
+        ros = ROSConnection.GetOrCreateInstance();
+        ros.RegisterPublisher<PoseStampedMsg>(topicName);
 
-//         _publishInterval = 1.0f / publishRateHz;
-//         _lastPublishTime = Time.time;
-//     }
+        _publishInterval = 1.0f / publishRateHz;
+        _lastPublishTime = Time.time;
+    }
 
-//     void Update()
-//     {
-//         if (Time.time - _lastPublishTime < _publishInterval) return;
+    void Update()
+    {
+        if (Time.time - _lastPublishTime < _publishInterval) return;
 
-//         PublishPose();
-//         _lastPublishTime = Time.time;
-//     }
+        PublishPose();
+        _lastPublishTime = Time.time;
+    }
 
-//     void PublishPose()
-//     {
-//         // Unity (Left-handed) -> ROS (Right-handed, FLU) 変換
-//         // Position: Unity(x, y, z) -> ROS(z, -x, y) 
-//         // ※この変換は一般的なTFに従いますが、プロジェクトの座標系によって調整が必要です。
-//         //   RootPoseSubscriberの逆を行うのが基本です。
-        
-//         Vector3 unityPos = targetTransform.position;
-//         Quaternion unityRot = targetTransform.rotation;
+    void PublishPose()
+    {
+        // Unity (Left-handed) -> ROS (Right-handed, FLU) 変換
+        Vector3 unityPos = controllerTransform.position;
+        Quaternion unityRot = controllerTransform.rotation;
 
-//         // Unity: X=Right, Y=Up, Z=Forward
-//         // ROS: X=Forward, Y=Left, Z=Up
-        
-//         // 変換ルール (Unity -> ROS):
-//         // ROS.x = Unity.z
-//         // ROS.y = -Unity.x
-//         // ROS.z = Unity.y
-        
-//         PointMsg position = new PointMsg(
-//             unityPos.z, 
-//             -unityPos.x, 
-//             unityPos.y
-//         );
+        PointMsg position = new PointMsg(
+            unityPos.z,
+            -unityPos.x,
+            unityPos.y
+        );
 
-//         // Rotation変換 (Unity -> ROS)
-//         // ROS.x = Unity.z
-//         // ROS.y = -Unity.x
-//         // ROS.z = Unity.y
-//         // ROS.w = -Unity.w
-        
-//         QuaternionMsg orientation = new QuaternionMsg(
-//             unityRot.z,
-//             -unityRot.x,
-//             unityRot.y,
-//             -unityRot.w
-//         );
+        QuaternionMsg orientation = new QuaternionMsg(
+            unityRot.z,
+            -unityRot.x,
+            unityRot.y,
+            -unityRot.w
+        );
 
-//         PoseStampedMsg msg = new PoseStampedMsg
-//         {
-//             header = new HeaderMsg
-//             {
-//                 frame_id = frameId,
-//                 stamp = new TimeMsg
-//                 {
-//                     sec = (uint)Time.time,
-//                     nanosec = (uint)((Time.time - (uint)Time.time) * 1e9)
-//                 }
-//             },
-//             pose = new PoseMsg
-//             {
-//                 position = position,
-//                 orientation = orientation
-//             }
-//         };
+        // ROS stamp（TimeMsgがuint想定のためuintで作る）
+        float t = Time.time;
+        uint sec = (uint)Mathf.FloorToInt(t);
+        uint nanosec = (uint)((t - (float)sec) * 1e9f);
 
-//         ros.Publish(topicName, msg);
-//     }
-// }
+        PoseStampedMsg msg = new PoseStampedMsg
+        {
+            header = new HeaderMsg
+            {
+                frame_id = frameId,
+                stamp = new TimeMsg
+                {
+                    sec = sec,
+                    nanosec = nanosec
+                }
+            },
+            pose = new PoseMsg
+            {
+                position = position,
+                orientation = orientation
+            }
+        };
+
+        ros.Publish(topicName, msg);
+    }
+}
