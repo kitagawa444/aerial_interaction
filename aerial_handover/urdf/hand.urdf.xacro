@@ -13,6 +13,12 @@
           <mesh filename="package://aerial_handover/urdf/mesh/hand.dae" scale= "0.01 0.01 0.01"/>
       </geometry>
     </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="-1.5708 0 -1.5708"/>
+      <geometry>
+        <mesh filename="package://aerial_handover/urdf/mesh/hand.dae" scale="0.01 0.01 0.01"/>
+      </geometry>
+    </collision>
   </link>
 
   <gazebo reference="hand_link">
