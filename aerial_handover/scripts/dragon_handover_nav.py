@@ -24,6 +24,9 @@ class DragonSimpleNav:
         # Subscribe to robot head pose (continuously updated)
         self.robot_head_pose_sub = rospy.Subscriber('/robot_head_pose', PoseStamped, self.robot_head_pose_cb)
 
+        # Subscribe to hand pose (continuously updated)
+        self.hand_pose_sub = rospy.Subscriber('/hand_pose', PoseStamped, self.hand_pose_cb)
+
         # Subscribe to trigger topic to start transformation and navigation
         self.trigger_sub = rospy.Subscriber('/dragon/trigger_handover', Empty, self.trigger_handover_cb)
 
@@ -42,6 +45,9 @@ class DragonSimpleNav:
         # Publisher for visualization markers
         self.marker_pub = rospy.Publisher("/dragon/intermediate_pose_marker", Marker, queue_size=10)
 
+        # Publisher for hand pose at handover trigger
+        self.hand_pose_handover_pub = rospy.Publisher("/hand_pose_handover", PoseStamped, queue_size=10)
+
         # Current joint states
         self.current_joint_positions = None
 
@@ -56,6 +62,9 @@ class DragonSimpleNav:
 
         # Target robot head pose
         self.target_robot_head_pose = None
+
+        # Current hand pose
+        self.current_hand_pose = None
 
         # Human center position (point H)
         self.human_center_x = None
@@ -133,6 +142,11 @@ class DragonSimpleNav:
         # Store the target robot head pose (continuously updated)
         self.target_robot_head_pose = msg
 
+    def hand_pose_cb(self, msg):
+        """Callback for hand pose - only stores the latest pose"""
+        # Store the current hand pose (continuously updated)
+        self.current_hand_pose = msg
+
     def trigger_handover_cb(self, msg):
         """Callback for trigger topic - starts the transformation and navigation task"""
         if self.target_robot_head_pose is None:
@@ -142,6 +156,13 @@ class DragonSimpleNav:
         if self.is_transforming_joints or self.is_navigating:
             rospy.logwarn("Handover task already in progress, ignoring trigger")
             return
+
+        # Publish current hand pose to handover topic
+        if self.current_hand_pose is not None:
+            self.hand_pose_handover_pub.publish(self.current_hand_pose)
+            rospy.loginfo("Published hand pose to /hand_pose_handover topic")
+        else:
+            rospy.logwarn("No hand pose available to publish")
 
         rospy.loginfo("Trigger received! Starting joint transformation with latest robot_head_pose...")
 
