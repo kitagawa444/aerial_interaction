@@ -1,7 +1,5 @@
 <?xml version="1.0"?>
 <launch>
-
-
   <!-- bringup robot -->
   <arg name="robot_name" default="snake" />
   <arg name="rm" default="True" />
@@ -40,7 +38,7 @@
   <arg name="eye_spawn_x" default="-2.0"/>
   <arg name="eye_spawn_y" default="0.0"/>
   <arg name="eye_spawn_z" default="1.0"/>
-  <arg name="eye_spawn_yaw" default="0.0"/>~/ros/human_robot_interaction_ws/web$
+  <arg name="eye_spawn_yaw" default="0.0"/>
   <node name="eye_camera_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
         args="-file $(find aerial_handover)/urdf/eye_camera.urdf.xacro -urdf -model eye -x $(arg eye_spawn_x) -y $(arg eye_spawn_y) -z $(arg eye_spawn_z) -Y $(arg eye_spawn_yaw)" if="$(arg sim)"/>
 
@@ -52,23 +50,19 @@
   <!-- args="image:=/eye_right/image_raw" /> -->
 
 
-  <!-- spawn hand model -->
-  <arg name="hand_spawn_x" default="2.0"/>
-  <arg name="hand_spawn_y" default="0.0"/>
-  <arg name="hand_spawn_z" default="0.0"/>
-  <arg name="hand_spawn_yaw" default="0.0"/>
-  <node name="hand_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-        args="-file $(find aerial_handover)/urdf/hand.urdf.xacro -urdf -model hand -x $(arg hand_spawn_x) -y $(arg hand_spawn_y) -z $(arg hand_spawn_z) -Y $(arg hand_spawn_yaw)" if="$(arg sim)"/>
 
   <!-- convert mocap data to gazebo world -->
-  <node name="mocap_convert" pkg="aerial_handover" type="mocap_convert.py" respawn="false" output="screen">
-    <remap from="hand_pose" to ="/wrist/mocap/pose"/>
-    <remap from="eye_pose" to ="/eye/mocap/pose"/>
-  </node>
+  <!-- <node name="mocap_convert" pkg="aerial_handover" type="mocap_convert.py" respawn="false" output="screen"> -->
+  <!--   <remap from="hand_pose" to ="/wrist/mocap/pose"/> -->
+  <!--   <remap from="eye_pose" to ="/eye/mocap/pose"/> -->
+  <!-- </node> -->
 
   <!-- convert gazebo world to mocap data-->
   <!-- 変更：simのとき常にではなく、use_gazebo_mocapがTrueのときだけ -->
-  <node name="gazebo_state_converter" pkg="aerial_handover" type="gazebo_state_converter.py" respawn="false" output="screen" if="$(arg use_gazebo_mocap)"/>
+  <node name="gazebo_state_converter" pkg="aerial_handover" type="gazebo_state_converter.py" respawn="false">
+    <remap from="hand_pose" to ="/wrist/mocap/pose"/>
+    <remap from="eye_pose" to ="/eye/mocap/pose"/>
+    </node>
 
 
   <!-- mocap -->
@@ -98,6 +92,31 @@
     <remap from="/desired_3D_pose" to="/hand_pose" />
   </node>
 
-  <node pkg="aerial_handover" type="set_hand_pose_gazebo.py" name="set_hand_pose_gazebo" output="screen" if="$(arg sim)"/>
+  <!-- <node pkg="aerial_handover" type="set_hand_pose_gazebo.py" name="set_hand_pose_gazebo" output="screen" if="$(arg sim)"/> -->
 
+  <!-- spawn hand model -->
+  <arg name="bottle_spawn_x" default="-0.2"/>
+  <arg name="bottle_spawn_y" default="0.0"/>
+  <arg name="bottle_spawn_z" default="0.0"/>
+  <arg name="bottle_spawn_yaw" default="0.0"/>
+  <node name="bottle_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+        args="-file $(find aerial_handover)/urdf/bottle.urdf.xacro -urdf -model bottle -x $(arg bottle_spawn_x) -y $(arg bottle_spawn_y) -z $(arg bottle_spawn_z) -Y $(arg bottle_spawn_yaw)" if="$(arg sim)"/>
+  <node pkg="aerial_handover" type="pub_obj_pose_gazebo.py" name="pub_obj_pose_gazebo" output="screen" if="$(arg sim)"/>
+  <node pkg="aerial_handover" type="hand_grasp_snake_bite.py" name="hand_grasp_snake_bite" output="screen" if="$(arg sim)"/>
+
+  <!-- spawn hand model -->
+  <arg name="hand_spawn_x" default="2.0"/>
+  <arg name="hand_spawn_y" default="0.0"/>
+  <arg name="hand_spawn_z" default="1.0"/>
+  <arg name="hand_spawn_yaw" default="0.0"/>
+  
+  <param name="/hand/robot_description"  
+         textfile="$(find aerial_handover)/urdf/hand.urdf.xacro" />  
+  <node name="hand_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+        args="-file $(find aerial_handover)/urdf/hand.urdf.xacro -urdf -model hand -x $(arg hand_spawn_x) -y $(arg hand_spawn_y) -z $(arg hand_spawn_z) -Y $(arg hand_spawn_yaw)" if="$(arg sim)"/>
+
+  <include file="$(find ros_tcp_endpoint)/launch/endpoint.launch" >
+  </include>
+  
+  
 </launch>

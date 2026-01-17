@@ -1,67 +1,107 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Software License Agreement (BSD License)
-
-# Copyright (c) 2025, DRAGON Laboratory, The University of Tokyo
-# All rightsreserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-#     * Redistributions of source code must retain the above copyright
-#       notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright
-#       notice, this list of conditions and the following disclaimer in the
-#       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the Willow Garage, Inc. nor the names of its
-#       contributors may be used to endorse or promote products derived from
-#       this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-
-
 import rospy
-from geometry_msgs.msg import PoseStamped
-from gazebo_msgs.msg import ModelState
+import numpy as np
+import tf.transformations as tft
+
+from geometry_msgs.msg import PoseStamped, Twist
+from gazebo_msgs.msg import LinkState, LinkStates
+
 
 class PoseToGazeboPublisher:
     def __init__(self):
-        rospy.init_node('gazebo_state_to_pose')
+        rospy.init_node('gazebo_linkstate_controller')
 
-        # Publisher
-        self.pub = rospy.Publisher('/gazebo/set_model_state', ModelState, queue_size=10)
-        
+        # ===== Publisher =====
+        self.pub = rospy.Publisher(
+            '/gazebo/set_link_state',
+            LinkState,
+            queue_size=10
+        )
 
-        # Subscriber
+        # ===== Subscribers =====
         rospy.Subscriber('hand_pose', PoseStamped, self.hand_pose_cb)
         rospy.Subscriber('eye_pose', PoseStamped, self.eye_pose_cb)
+        rospy.Subscriber('/gazebo/link_states', LinkStates, self.link_states_cb)
+
+        # ===== internal state =====
+        self.hand_current_pose = None
+
+        # ===== gains =====
+        self.kp_lin = 2.0
+        self.kp_ang = 2.0
+
+        # ===== target link name =====
+        self.hand_link_name = 'hand::hand_link'  # ← 実際の link 名に合わせる
+        self.eye_link_name  = 'eye::camera_link'
+
+    def link_states_cb(self, msg):
+        if self.hand_link_name in msg.name:
+            idx = msg.name.index(self.hand_link_name)
+            self.hand_current_pose = msg.pose[idx]
 
     def hand_pose_cb(self, msg):
-        state = ModelState()
-        state.model_name = 'hand'
-        state.reference_frame = 'world'
-        state.pose = msg.pose
+        if self.hand_current_pose is None:
+            return
 
+        state = LinkState()
+        state.link_name = self.hand_link_name
+        state.reference_frame = 'world'
+
+        # ===== pose は現在値（必須・超重要）=====
+        state.pose = self.hand_current_pose
+
+        twist = Twist()
+
+        # ===== 並進速度 =====
+        dx = msg.pose.position.x - self.hand_current_pose.position.x
+        dy = msg.pose.position.y - self.hand_current_pose.position.y
+        dz = msg.pose.position.z - self.hand_current_pose.position.z
+
+        twist.linear.x = self.kp_lin * dx
+        twist.linear.y = self.kp_lin * dy
+        twist.linear.z = self.kp_lin * dz
+
+        # ===== 姿勢角速度（quaternion差分）=====
+        q_t = [
+            msg.pose.orientation.x,
+            msg.pose.orientation.y,
+            msg.pose.orientation.z,
+            msg.pose.orientation.w
+        ]
+        q_c = [
+            self.hand_current_pose.orientation.x,
+            self.hand_current_pose.orientation.y,
+            self.hand_current_pose.orientation.z,
+            self.hand_current_pose.orientation.w
+        ]
+
+        q_e = tft.quaternion_multiply(
+            q_t,
+            tft.quaternion_inverse(q_c)
+        )
+
+        # shortest rotation
+        if q_e[3] < 0.0:
+            q_e = [-q_e[0], -q_e[1], -q_e[2], -q_e[3]]
+
+        twist.angular.x = self.kp_ang * 2.0 * q_e[0]
+        twist.angular.y = self.kp_ang * 2.0 * q_e[1]
+        twist.angular.z = self.kp_ang * 2.0 * q_e[2]
+
+        state.twist = twist
         self.pub.publish(state)
 
     def eye_pose_cb(self, msg):
-        state = ModelState()
-        state.model_name = 'eye'
+        # eye は pose 直接指定でも OK（attach しない前提）
+        state = LinkState()
+        state.link_name = self.eye_link_name
         state.reference_frame = 'world'
         state.pose = msg.pose
-
+        state.twist = Twist()
         self.pub.publish(state)
+
 
 if __name__ == "__main__":
     try:
