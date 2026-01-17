@@ -48,7 +48,7 @@ class AutoGrasping:
         self.pending_command = None
         self.is_busy = False
 
-    def command_callback(self、, msg):
+    def command_callback(self, msg):
         # Accept external command strings: open/close/init/quit or o/c/i/q
         command = msg.data.strip().lower()
         command_map = {
@@ -68,6 +68,7 @@ class AutoGrasping:
         if self.is_busy:
             rospy.logwarn("Busy; ignoring command: %s", normalized)
             return
+        rospy.loginfo("Command received: %s", normalized)
         self.pending_command = normalized
 
     def check_subscription(self):
@@ -290,10 +291,13 @@ class AutoGrasping:
                     rospy.signal_shutdown("")
                     break
                 elif command == "open":
+                    rospy.loginfo("Starting open sequence.")
                     self.run_open_sequence()
                 elif command == "close":
+                    rospy.loginfo("Starting close sequence.")
                     self.run_close_sequence()
                 elif command == "init":
+                    rospy.loginfo("Starting init sequence.")
                     self.run_init_sequence()
                 self.is_busy = False
             self.rate.sleep()
