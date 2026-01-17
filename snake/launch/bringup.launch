@@ -5,17 +5,20 @@
   <arg name="sim" default="False" />
   <arg name="battery" default="true" />
   <arg name="takeoff_height"  default= "0" />
-  <arg name="mujoco" default="False" />
   <arg name="headless" default="True" />
+
+  <arg name="model_name" value="$(find snake)/robots/dragon.gazebo.xacro" if="$(arg battery)" />
+  <arg name="model_name" value="$(find snake)/robots/dragon_no_bat.gazebo.xacro" unless="$(arg battery)" />
 
   <include file="$(find dragon)/launch/bringup.launch" >
     <arg name="rm" value="$(arg rm)" />
     <arg name="sim" value="$(arg sim)" />
     <arg name="battery" value="$(arg battery)" />
     <arg name="takeoff_height"  value= "$(arg takeoff_height)" />
-    <arg name="mujoco" value="$(arg mujoco)" />
     <arg name="demo" value="False" />
     <arg name="headless" value="$(arg headless)" />
+    <arg name="direct_model" value="True" />
+    <arg name="direct_model_name" value="$(arg model_name)" />
   </include>
 
   # snake head
